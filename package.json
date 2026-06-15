@@ -1,0 +1,28 @@
+{
+    "name": "androdex",
+    "private": true,
+    "scripts": {
+        "test": "pnpm --filter @androdex/tests test",
+        "dev": "pnpm --filter @androdex/desktop dev",
+        "build": "pnpm --filter @androdex/desktop build",
+        "session": "pnpm --filter @androdex/tests test session.test.ts"
+    },
+    "devEngines": {
+        "packageManager": {
+            "name": "pnpm",
+            "version": "^11.1.2",
+            "onFail": "download"
+        }
+    },
+    "type": "module",
+    "devDependencies": {
+        "@dotenvx/dotenvx": "^1.71.2",
+        "tailwindcss": "catalog:",
+        "@tailwindcss/vite": "catalog:",
+        "typescript": "catalog:"
+    },
+    "dependencies": {
+        "zustand": "catalog:",
+        "typescript": "catalog:"
+    }
+}

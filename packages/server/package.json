@@ -1,0 +1,22 @@
+{
+    "name": "@androdex/server",
+    "version": "1.0.0",
+    "description": "The server package for Androdex",
+    "main": "dist/index.js",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch"
+    },
+    "types": "dist/index.d.ts",
+    "devDependencies": {
+        "typescript": "catalog:",
+        "nodemon": "^3.1.14",
+        "vite": "catalog:",
+        "wait-on": "^8.0.0"
+    },
+    "dependencies": {
+        "@opencode-ai/sdk": "catalog:"
+    }
+}

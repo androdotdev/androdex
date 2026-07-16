@@ -7,7 +7,6 @@
     "type": "module",
     "main": "dist/main/index.js",
     "scripts": {
-        "postinstall": "electron-builder install-app-deps",
         "dev": "concurrently \"vite\" \"pnpm exec tsc -p tsconfig.main.json --watch\" \"wait-on tcp:5173 && wait-on dist/main/index.js && nodemon --watch dist/main --watch dist/preload --ext js --exec electron .\"",
         "build:renderer": "vite build",
         "build:main": "tsc -p tsconfig.main.json",

@@ -1,5 +1,5 @@
 import { ipcMain } from "electron";
-import { spawn, type IPty } from "node-pty";
+import { spawn, type IPty } from "node-pty-prebuilt-multiarch";
 import { EventEmitter } from "node:events";
 
 const SHELL = process.env.SHELL || (process.platform === "win32" ? "powershell.exe" : "bash");

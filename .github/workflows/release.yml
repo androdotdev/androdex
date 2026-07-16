@@ -34,23 +34,8 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # node-pty needs node-gyp which requires distutils (gone in py3.12+).
-      # Python 3.11 still ships distutils, so pin it for native builds.
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      # Windows: node-pty builds from source via node-gyp — needs MSBuild on PATH.
-      - name: Setup MSVC (windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
       - name: Install deps
         run: pnpm install --frozen-lockfile
-        env:
-          npm_config_python: python3.11
 
       - name: Build packages + renderer + main
         run: |
@@ -62,7 +47,6 @@ jobs:
         run: pnpm --filter @androdex/desktop exec electron-builder --${{ matrix.platform }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_python: python3.11
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

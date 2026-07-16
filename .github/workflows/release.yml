@@ -43,7 +43,7 @@ jobs:
           pnpm --filter @androdex/desktop build:main
 
       - name: Package (electron-builder)
-        run: pnpm --filter @androdex/desktop electron-builder --${{ matrix.platform }} --publish always
+        run: pnpm --filter @androdex/desktop exec electron-builder --${{ matrix.platform }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

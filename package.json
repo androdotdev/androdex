@@ -24,10 +24,5 @@
   "dependencies": {
     "zustand": "catalog:",
     "typescript": "catalog:"
-  },
-  "pnpm": {
-    "overrides": {
-      "node-gyp": "^11.0.0"
-    }
   }
 }

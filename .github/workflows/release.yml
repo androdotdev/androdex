@@ -22,11 +22,6 @@ jobs:
           - os: windows-latest
             platform: win
     runs-on: ${{ matrix.os }}
-    env:
-      # node-gyp 11 (forced via pnpm.overrides) handles VS2022 detection.
-      # mac: pin py3.11 (distutils) for node-pty native build.
-      npm_config_msvs_version: ${{ matrix.platform == 'win' && '2022' || '' }}
-      npm_config_python: ${{ matrix.platform == 'mac' && 'python3.11' || 'python3' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -39,16 +34,31 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # node-pty native build needs node-gyp + a Python with distutils (gone in py3.12+).
-      # Pin 3.11 on macOS so node-gyp picks it up.
-      - name: Setup Python 3.11 (mac)
-        if: matrix.platform == 'mac'
-        uses: actions/setup-python@v5
+      # Cache Electron + electron-builder downloaded binaries (avoid 113MB re-download)
+      - name: Cache Electron binaries
+        uses: actions/cache@v4
         with:
-          python-version: "3.11"
+          path: ~/.cache/electron
+          key: ${{ runner.os }}-electron-${{ hashFiles('pnpm-lock.yaml') }}
 
+      - name: Cache electron-builder
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-builder
+
+      # node-pty 1.1.0 ships prebuilds (real TTY binaries) — use them, don't compile.
+      # build_from_source=false keeps the prebuild path (no MSVC / no Python needed).
       - name: Install deps
         run: pnpm install --frozen-lockfile
+        env:
+          npm_config_build_from_source: "false"
+
+      # pnpm copies node-pty prebuilds with 644 perms on macOS (node-pty issue #850,
+      # unfixed in 1.1.0). chmod the spawn-helper so it's executable at runtime.
+      - name: Fix node-pty spawn-helper perms (pnpm/macOS #850)
+        if: runner.os == 'macOS'
+        run: find node_modules/.pnpm -path '*node-pty*/prebuilds/darwin-*' -name spawn-helper -exec chmod +x {} +
 
       - name: Build packages + renderer + main
         run: |

@@ -22,3 +22,6 @@ allowBuilds:
   electron-winstaller: false
   esbuild: false
   node-pty: true
+
+supplyChain:
+  minimumReleaseAge: 0

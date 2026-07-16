@@ -6,15 +6,19 @@ export function PromptInput() {
   const { promptInput, setPromptInput } = useInputStore();
   const { activeSessionId } = useSessionStore();
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const send = async () => {
     if (!promptInput.trim() || !activeSessionId || sending) return;
     setSending(true);
+    setError(null);
     try {
       await window.api.promptSession(activeSessionId, [
         { type: "text", text: promptInput },
       ]);
       setPromptInput("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to send message");
     } finally {
       setSending(false);
     }
@@ -22,6 +26,9 @@ export function PromptInput() {
 
   return (
     <div className="border-t border-slate-800 bg-slate-950 p-3">
+      {error && (
+        <p className="text-xs text-rose-400 mb-2 px-1">{error}</p>
+      )}
       <div className="flex gap-2">
         <textarea
           value={promptInput}

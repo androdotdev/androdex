@@ -6,13 +6,23 @@ const SHELL = process.env.SHELL || (process.platform === "win32" ? "powershell.e
 const sessions = new Map<string, IPty>();
 const emitter = new EventEmitter();
 
+// TODO: wire up per-thread terminals. Sidebar implies multiple "Threads"
+// but today only id "main" is ever spawned from Terminal.tsx. Multi-session
+// PTY (one shell per session) is not yet connected to the UI model.
+
 function handleData(id: string, data: string) {
   emitter.emit(`data:${id}`, data);
 }
 
 export function registerPtyHandlers(): void {
   ipcMain.handle("pty:spawn", (_e, id: string, cols: number, rows: number) => {
-    if (sessions.has(id)) return;
+    if (sessions.has(id)) {
+      // Already exists — signal back so caller knows it didn't create a new one
+      return { ok: false, reason: "exists" };
+    }
+    if (!id || typeof id !== "string") {
+      return { ok: false, reason: "invalid-id" };
+    }
     const pty = spawn(SHELL, [], {
       name: "xterm-color",
       cols: cols || 80,
@@ -25,13 +35,15 @@ export function registerPtyHandlers(): void {
       sessions.delete(id);
     });
     sessions.set(id, pty);
+    return { ok: true };
   });
 
-  ipcMain.handle("pty:write", (_e, id: string, data: string) => {
+  // Fire-and-forget on hot path (keystroke / resize) — no promise overhead
+  ipcMain.on("pty:write", (_e, id: string, data: string) => {
     sessions.get(id)?.write(data);
   });
 
-  ipcMain.handle("pty:resize", (_e, id: string, cols: number, rows: number) => {
+  ipcMain.on("pty:resize", (_e, id: string, cols: number, rows: number) => {
     sessions.get(id)?.resize(cols, rows);
   });
 

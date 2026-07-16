@@ -3,6 +3,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { registerHandlers } from "../ipc/index.js";
+import { registerPtyHandlers } from "../pty-host/index.js";
 import { createClient } from "@androdex/server";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -63,6 +64,7 @@ app.whenReady().then(async () => {
   }
 
   registerHandlers();
+  registerPtyHandlers();
   createWindow();
 
   app.on("activate", () => {

@@ -8,7 +8,6 @@ onlyBuiltDependencies:
   - electron
   - esbuild
   - electron-winstaller
-  - node-pty-prebuilt-multiarch
 catalog:
   "typescript": ~6.0.2
   "vitest": ^2.1.9
@@ -23,5 +22,4 @@ allowBuilds:
   electron-winstaller: false
   esbuild: false
   node-pty: true
-  node-pty-prebuilt-multiarch: true
 

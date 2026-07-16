@@ -22,6 +22,10 @@ jobs:
           - os: windows-latest
             platform: win
     runs-on: ${{ matrix.os }}
+    env:
+      # node-gyp needs to know which VS to use on Windows (runner has VS2022 / v18)
+      npm_config_msvs_version: ${{ matrix.platform == 'win' && '2022' || '' }}
+      npm_config_python: ${{ matrix.platform == 'mac' && 'python3.11' || 'python3' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -35,7 +39,7 @@ jobs:
           cache: pnpm
 
       # node-pty native build needs node-gyp + a Python with distutils (gone in py3.12+).
-      # Pin 3.11 on macOS so node-gyp picks it up via npm_config_python.
+      # Pin 3.11 on macOS so node-gyp picks it up.
       - name: Setup Python 3.11 (mac)
         if: matrix.platform == 'mac'
         uses: actions/setup-python@v5
@@ -51,8 +55,6 @@ jobs:
 
       - name: Install deps
         run: pnpm install --frozen-lockfile
-        env:
-          npm_config_python: ${{ matrix.platform == 'mac' && 'python3.11' || 'python3' }}
 
       - name: Build packages + renderer + main
         run: |
@@ -64,7 +66,6 @@ jobs:
         run: pnpm --filter @androdex/desktop exec electron-builder --${{ matrix.platform }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_python: ${{ matrix.platform == 'mac' && 'python3.11' || 'python3' }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

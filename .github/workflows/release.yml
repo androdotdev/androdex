@@ -40,6 +40,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      # Windows: node-pty builds from source via node-gyp — needs MSBuild on PATH.
+      - name: Setup MSVC (windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Install deps
         run: pnpm install --frozen-lockfile
         env:

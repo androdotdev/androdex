@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSessionStore, useUiStore } from "../lib/store";
+import { useSessionStore, useUiStore, useStore } from "../lib/store";
 
 export function Sidebar() {
   const sessions = useSessionStore((s) => s.sessions);
@@ -24,10 +24,8 @@ export function Sidebar() {
         setActiveSession(res.data.id);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed to create session";
       console.error("Sidebar createSession error:", e);
-      setCreateError(msg);
-      setTimeout(() => setCreateError(null), 4000);
+      useStore.getState().ensureActiveSession();
     }
   };
 

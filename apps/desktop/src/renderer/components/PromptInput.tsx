@@ -1,27 +1,28 @@
 import { useState } from "react";
-import { useInputStore, useSessionStore } from "../lib/store";
+import { useInputStore, useSessionStore, useStore } from "../lib/store";
 
 export function PromptInput() {
   const promptInput = useInputStore((s) => s.promptInput);
   const setPromptInput = useInputStore((s) => s.setPromptInput);
   const setMessages = useSessionStore((s) => s.setMessages);
-  const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const send = async () => {
-    if (!promptInput.trim() || !activeSessionId || sending) return;
+    if (!promptInput.trim() || sending) return;
     setSending(true);
     setError(null);
+    // Auto-create a session if none exists
+    const sessionId = useStore.getState().ensureActiveSession();
     try {
-      await window.api.promptSession(activeSessionId, {
+      await window.api.promptSession(sessionId, {
         parts: [{ type: "text", text: promptInput }],
       });
       setPromptInput("");
       // Fetch updated messages from the server so the UI shows the AI response
-      const msgsRes = await window.api.getSessionMessages(activeSessionId, { limit: 50 });
+      const msgsRes = await window.api.getSessionMessages(sessionId, { limit: 50 });
       if (msgsRes.data) {
-        setMessages(activeSessionId, msgsRes.data);
+        setMessages(sessionId, msgsRes.data);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send message");
@@ -51,7 +52,7 @@ export function PromptInput() {
         />
         <button
           onClick={send}
-          disabled={sending || !activeSessionId}
+          disabled={sending}
           className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white text-sm"
         >
           Send

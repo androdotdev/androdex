@@ -4,6 +4,7 @@ import { TopBar } from "./components/TopBar";
 import { MessageList } from "./components/MessageList";
 import { PromptInput } from "./components/PromptInput";
 import { DiffPanel } from "./components/DiffPanel";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { Terminal } from "./components/Terminal";
 import { useUiStore, useSessionStore } from "./lib/store";
 
@@ -85,6 +86,7 @@ export default function App() {
             </button>
             <Terminal />
           </div>
+          <SettingsPanel />
           <DiffPanel />
         </div>
       </main>

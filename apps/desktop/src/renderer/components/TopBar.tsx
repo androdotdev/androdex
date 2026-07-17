@@ -9,6 +9,7 @@ export function TopBar() {
   const model = useUiStore((s) => s.model);
   const setModel = useUiStore((s) => s.setModel);
   const toggleDiff = useUiStore((s) => s.toggleDiff);
+  const toggleSettings = useUiStore((s) => s.toggleSettings);
   const diffOpen = useUiStore((s) => s.diffOpen);
   const [models, setModels] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +73,12 @@ export function TopBar() {
         }`}
       >
         Diff
+      </button>
+      <button
+        onClick={toggleSettings}
+        className="text-xs px-3 py-1 rounded bg-slate-800 text-slate-400 hover:bg-slate-700"
+      >
+        Settings
       </button>
     </div>
   );

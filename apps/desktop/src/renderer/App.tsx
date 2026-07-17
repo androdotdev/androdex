@@ -1,13 +1,72 @@
+import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
 import { MessageList } from "./components/MessageList";
 import { PromptInput } from "./components/PromptInput";
 import { DiffPanel } from "./components/DiffPanel";
 import { Terminal } from "./components/Terminal";
-import { useUiStore } from "./lib/store";
+import { useUiStore, useSessionStore } from "./lib/store";
 
 export default function App() {
-  const { terminalOpen, toggleTerminal } = useUiStore();
+  const terminalOpen = useUiStore((s) => s.terminalOpen);
+  const toggleTerminal = useUiStore((s) => s.toggleTerminal);
+  const setSessions = useSessionStore((s) => s.setSessions);
+  const setActiveSession = useSessionStore((s) => s.setActiveSession);
+  const model = useUiStore((s) => s.model);
+  const agentMode = useUiStore((s) => s.agentMode);
+  const [initDone, setInitDone] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+  const initLock = useRef(false);
+
+  // On mount: create a default session so the send button is enabled.
+  // useRef lock guards against StrictMode double-fire (React 18/19 dev).
+  useEffect(() => {
+    if (initLock.current) return;
+    initLock.current = true;
+    (async () => {
+      try {
+        const listRes = await window.api.listSessions({ limit: 10 });
+        const existing = listRes.data || [];
+        if (existing.length > 0) {
+          setSessions(existing);
+          setActiveSession(existing[0].id);
+          setInitDone(true);
+          return;
+        }
+        const res = await window.api.createSession({
+          title: "default",
+          agent: agentMode,
+          model: model || undefined,
+          directory: ".",
+        });
+        if (res.data) {
+          setSessions([res.data]);
+          setActiveSession(res.data.id);
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to initialize session";
+        console.error("Androdex init error:", e);
+        setInitError(msg);
+      } finally {
+        setInitDone(true);
+      }
+    })();
+  }, []);
+
+  if (!initDone) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-950 text-sm">
+        {initError ? (
+          <div className="text-center space-y-2">
+            <p className="text-rose-400">Failed to start</p>
+            <p className="text-slate-400 max-w-md">{initError}</p>
+          </div>
+        ) : (
+          <p className="text-slate-400">Starting Androdex…</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex bg-slate-950 text-slate-100">

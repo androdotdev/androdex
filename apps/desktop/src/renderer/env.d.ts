@@ -18,6 +18,19 @@ interface Message {
   status: "streaming" | "done" | "error";
 }
 
+interface ModelInfo {
+  id: string;
+  name?: string;
+  provider?: string;
+  capabilities?: string[];
+}
+
+interface AgentInfo {
+  id: string;
+  name?: string;
+  description?: string;
+}
+
 interface ToolCall {
   id: string;
   tool: string;
@@ -58,15 +71,15 @@ interface Window {
     getConfig(): Promise<ApiResponse<any>>;
     updateConfig(params: any): Promise<ApiResponse<any>>;
     getProviders(): Promise<ApiResponse<any>>;
-    listModels(): Promise<ApiResponse<any>>;
-    listAgents(): Promise<ApiResponse<any>>;
+    listModels(): Promise<ApiResponse<ModelInfo[]>>;
+    listAgents(): Promise<ApiResponse<AgentInfo[]>>;
     listCommands(): Promise<ApiResponse<any>>;
     subscribeToEvents(params?: any): Promise<ApiResponse<any>>;
     terminalSpawn(id: string, cols: number, rows: number): Promise<void>;
-    terminalWrite(data: string): Promise<void>;
-    terminalResize(cols: number, rows: number): Promise<void>;
-    terminalDestroy(): Promise<void>;
-    onTerminalData(callback: (data: string) => void): () => void;
-    onTerminalExit(callback: (code: number) => void): () => void;
+    terminalWrite(id: string, data: string): Promise<void>;
+    terminalResize(id: string, cols: number, rows: number): Promise<void>;
+    terminalDestroy(id: string): Promise<void>;
+    onTerminalData(id: string, callback: (data: string) => void): () => void;
+    onTerminalExit(id: string, callback: (code: number) => void): () => void;
   };
 }

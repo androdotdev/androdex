@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import { useUiStore } from "../lib/store";
+import { useUiStore, useSessionStore } from "../lib/store";
 
 export function Terminal() {
-  const { terminalOpen, toggleTerminal } = useUiStore();
+  const terminalOpen = useUiStore((s) => s.terminalOpen);
+  const toggleTerminal = useUiStore((s) => s.toggleTerminal);
+  const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const ref = useRef<HTMLDivElement>(null);
   const term = useRef<XTerm | undefined>(undefined);
 
@@ -16,19 +18,19 @@ export function Terminal() {
     t.open(ref.current);
     fit.fit();
     term.current = t;
-    const id = "main";
+    const id = activeSessionId || "main";
     window.api.terminalSpawn?.(id, t.cols, t.rows);
-    const offData = window.api.onTerminalData?.((d) => t.write(d));
-    t.onData((d) => window.api.terminalWrite?.(d));
+    const offData = window.api.onTerminalData?.(id, (d) => t.write(d));
+    t.onData((d) => window.api.terminalWrite?.(id, d));
     const onResize = () => fit.fit();
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
       offData?.();
-      window.api.terminalDestroy?.();
+      window.api.terminalDestroy?.(id);
       t.dispose();
     };
-  }, [terminalOpen]);
+  }, [terminalOpen, activeSessionId]);
 
   if (!terminalOpen) return null;
   return (

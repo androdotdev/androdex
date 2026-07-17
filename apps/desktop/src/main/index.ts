@@ -46,16 +46,16 @@ function createWindow() {
     },
   });
 
+  mainWindowRef = mainWindow;
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindowRef = mainWindow;
     mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
-    // Forward PTY output/exit from the main process to the renderer.
-    onPtyData("main", (data) => mainWindowRef?.webContents.send("pty:data:main", data));
-    onPtyExit("main", (code) => mainWindowRef?.webContents.send("pty:exit:main", code));
   }
+  // Forward PTY output/exit from the main process to the renderer.
+  onPtyData("main", (data) => mainWindowRef?.webContents.send("pty:data:main", data));
+  onPtyExit("main", (code) => mainWindowRef?.webContents.send("pty:exit:main", code));
 }
 
 async function waitForHealth(): Promise<void> {

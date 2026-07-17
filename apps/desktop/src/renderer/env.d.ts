@@ -52,7 +52,7 @@ interface Window {
     getSession(sessionID: string): Promise<ApiResponse<Session>>;
     deleteSession(sessionID: string): Promise<void>;
     getSessionMessages(sessionID: string, params?: { limit?: number; before?: string }): Promise<ApiResponse<Message[]>>;
-    promptSession(sessionID: string, parts: any[]): Promise<ApiResponse<any>>;
+    promptSession(sessionID: string, params: { parts?: { type: string; text: string }[]; model?: string; agent?: string }): Promise<ApiResponse<any>>;
     abortSession(sessionID: string): Promise<void>;
     forkSession(sessionID: string, messageID?: string): Promise<ApiResponse<Session>>;
     getSessionDiff(sessionID: string, messageID?: string): Promise<ApiResponse<any>>;

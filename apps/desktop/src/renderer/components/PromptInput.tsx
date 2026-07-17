@@ -4,6 +4,7 @@ import { useInputStore, useSessionStore } from "../lib/store";
 export function PromptInput() {
   const promptInput = useInputStore((s) => s.promptInput);
   const setPromptInput = useInputStore((s) => s.setPromptInput);
+  const setMessages = useSessionStore((s) => s.setMessages);
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -13,10 +14,15 @@ export function PromptInput() {
     setSending(true);
     setError(null);
     try {
-      await window.api.promptSession(activeSessionId, [
-        { type: "text", text: promptInput },
-      ]);
+      await window.api.promptSession(activeSessionId, {
+        parts: [{ type: "text", text: promptInput }],
+      });
       setPromptInput("");
+      // Fetch updated messages from the server so the UI shows the AI response
+      const msgsRes = await window.api.getSessionMessages(activeSessionId, { limit: 50 });
+      if (msgsRes.data) {
+        setMessages(activeSessionId, msgsRes.data);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send message");
     } finally {

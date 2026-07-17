@@ -2,9 +2,16 @@ appId: com.androdex.app
 productName: Androdex
 copyright: Copyright © 2025 Androdex
 
+# Faster packaging in CI (no slow NSIS compression). Tradeoff: larger installer.
+compression: store
+
 directories:
   output: release
   buildResources: build
+
+# node-pty 1.1.0 ships N-API prebuilds (ABI-stable, work in Electron 39).
+# Skip electron-builder's native rebuild — it forces node-gyp 9 (distutils bug).
+npmRebuild: false
 
 files:
   - dist/**
@@ -27,7 +34,6 @@ win:
   icon: build/icon.ico
 
 nsis:
-  compression: store
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true

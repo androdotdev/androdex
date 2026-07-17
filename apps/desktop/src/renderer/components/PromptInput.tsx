@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useInputStore } from "../lib/store";
-import { useSessionStore } from "../lib/store";
+import { useInputStore, useSessionStore } from "../lib/store";
 
 export function PromptInput() {
-  const { promptInput, setPromptInput } = useInputStore();
-  const { activeSessionId } = useSessionStore();
+  const promptInput = useInputStore((s) => s.promptInput);
+  const setPromptInput = useInputStore((s) => s.setPromptInput);
+  const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -11,6 +11,14 @@ export const useStore = create<Store>()((...a) => ({
   ...createInputSlice(...a),
 }));
 
-export const useUiStore = () => useStore();
-export const useSessionStore = () => useStore();
-export const useInputStore = () => useStore();
+// Selector-scoped hooks: each component selects only what it needs,
+// preventing unnecessary re-renders when unrelated slices change.
+export function useUiStore<T>(selector: (state: UiSlice) => T): T {
+  return useStore((s) => selector(s as UiSlice));
+}
+export function useSessionStore<T>(selector: (state: SessionSlice) => T): T {
+  return useStore((s) => selector(s as SessionSlice));
+}
+export function useInputStore<T>(selector: (state: InputSlice) => T): T {
+  return useStore((s) => selector(s as InputSlice));
+}

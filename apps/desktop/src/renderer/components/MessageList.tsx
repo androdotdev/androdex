@@ -1,7 +1,8 @@
 import { useSessionStore } from "../lib/store";
 
 export function MessageList() {
-  const { activeSessionId, messages } = useSessionStore();
+  const activeSessionId = useSessionStore((s) => s.activeSessionId);
+  const messages = useSessionStore((s) => s.messages);
   const msgs = activeSessionId ? messages[activeSessionId] || [] : [];
 
   if (!activeSessionId) {

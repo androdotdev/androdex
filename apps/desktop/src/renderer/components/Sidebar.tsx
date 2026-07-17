@@ -1,13 +1,38 @@
-import { useSessionStore } from "../lib/store";
+import { useSessionStore, useUiStore } from "../lib/store";
 
 export function Sidebar() {
-  const { sessions, activeSessionId, setActiveSession } = useSessionStore();
+  const sessions = useSessionStore((s) => s.sessions);
+  const activeSessionId = useSessionStore((s) => s.activeSessionId);
+  const setActiveSession = useSessionStore((s) => s.setActiveSession);
+  const setSessions = useSessionStore((s) => s.setSessions);
+  const model = useUiStore((s) => s.model);
+  const agentMode = useUiStore((s) => s.agentMode);
+
+  const createNew = async () => {
+    try {
+      const res = await window.api.createSession({
+        title: "new thread",
+        agent: agentMode,
+        model: model || undefined,
+        directory: ".",
+      });
+      if (res.data) {
+        setSessions([res.data, ...sessions]);
+        setActiveSession(res.data.id);
+      }
+    } catch (e) {
+      console.error("Failed to create session:", e);
+    }
+  };
 
   return (
     <aside className="w-64 h-full border-r border-slate-800 bg-slate-950 flex flex-col">
       <div className="p-3 border-b border-slate-800 flex items-center justify-between">
         <span className="text-sm font-semibold text-slate-200">Threads</span>
-        <button className="text-xs px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white">
+        <button
+          onClick={createNew}
+          className="text-xs px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white"
+        >
           + New
         </button>
       </div>

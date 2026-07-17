@@ -4,7 +4,8 @@ import { FitAddon } from "@xterm/addon-fit";
 import { useUiStore } from "../lib/store";
 
 export function Terminal() {
-  const { terminalOpen, toggleTerminal } = useUiStore();
+  const terminalOpen = useUiStore((s) => s.terminalOpen);
+  const toggleTerminal = useUiStore((s) => s.toggleTerminal);
   const ref = useRef<HTMLDivElement>(null);
   const term = useRef<XTerm | undefined>(undefined);
 
@@ -18,14 +19,14 @@ export function Terminal() {
     term.current = t;
     const id = "main";
     window.api.terminalSpawn?.(id, t.cols, t.rows);
-    const offData = window.api.onTerminalData?.((d) => t.write(d));
-    t.onData((d) => window.api.terminalWrite?.(d));
+    const offData = window.api.onTerminalData?.(id, (d) => t.write(d));
+    t.onData((d) => window.api.terminalWrite?.(id, d));
     const onResize = () => fit.fit();
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
       offData?.();
-      window.api.terminalDestroy?.();
+      window.api.terminalDestroy?.(id);
       t.dispose();
     };
   }, [terminalOpen]);

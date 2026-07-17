@@ -71,18 +71,22 @@ jobs:
       - name: Download opencode binary
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p apps/desktop/resources/opencode
+          mkdir -p /tmp/opencode-dl /tmp/opencode-extracted
           gh release download v1.18.3 \
             --repo anomalyco/opencode \
             --pattern "${{ matrix.opencode_asset }}" \
             --dir /tmp/opencode-dl
+          echo "Downloaded: $(ls -la /tmp/opencode-dl)"
           if [[ "${{ matrix.opencode_asset }}" == *.zip ]]; then
-            unzip -o /tmp/opencode-dl/${{ matrix.opencode_asset }} -d /tmp/opencode-extracted
+            unzip -o "/tmp/opencode-dl/${{ matrix.opencode_asset }}" -d /tmp/opencode-extracted
           else
-            tar -xzf /tmp/opencode-dl/${{ matrix.opencode_asset }} -C /tmp/opencode-extracted
+            tar -xzf "/tmp/opencode-dl/${{ matrix.opencode_asset }}" -C /tmp/opencode-extracted
           fi
           # Find the binary (top-level or nested) and copy it
           BIN=$(find /tmp/opencode-extracted -type f -name "${{ matrix.opencode_bin }}" | head -1)
+          echo "Found binary: $BIN"
           cp "$BIN" "apps/desktop/resources/opencode/${{ matrix.opencode_bin }}"
           chmod +x "apps/desktop/resources/opencode/${{ matrix.opencode_bin }}"
           ls -la apps/desktop/resources/opencode/

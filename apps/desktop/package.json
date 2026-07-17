@@ -3,7 +3,7 @@
     "private": true,
     "author": "androdotdev",
     "description": "The GUI desktop app for opencode",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "type": "module",
     "main": "dist/main/index.js",
     "scripts": {

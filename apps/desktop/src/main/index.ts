@@ -4,7 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { registerHandlers } from "../ipc/index.js";
-import { registerPtyHandlers } from "../pty-host/index.js";
+import { registerPtyHandlers, onPtyData, onPtyExit } from "../pty-host/index.js";
 import { createClient } from "@androdex/server";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -33,6 +33,8 @@ function findOpencode(): string | null {
   }
 }
 
+let mainWindowRef: import("electron").BrowserWindow | null = null;
+
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -48,7 +50,11 @@ function createWindow() {
     mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
   } else {
+    mainWindowRef = mainWindow;
     mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+    // Forward PTY output/exit from the main process to the renderer.
+    onPtyData("main", (data) => mainWindowRef?.webContents.send("pty:data:main", data));
+    onPtyExit("main", (code) => mainWindowRef?.webContents.send("pty:exit:main", code));
   }
 }
 

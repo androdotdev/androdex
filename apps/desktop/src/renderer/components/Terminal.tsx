@@ -6,7 +6,7 @@ import { useUiStore } from "../lib/store";
 export function Terminal() {
   const { terminalOpen, toggleTerminal } = useUiStore();
   const ref = useRef<HTMLDivElement>(null);
-  const term = useRef<XTerm>();
+  const term = useRef<XTerm | undefined>(undefined);
 
   useEffect(() => {
     if (!terminalOpen || !ref.current) return;
@@ -17,7 +17,7 @@ export function Terminal() {
     fit.fit();
     term.current = t;
     const id = "main";
-    window.api.terminalSpawn?.(id, fit.cols, fit.rows);
+    window.api.terminalSpawn?.(id, t.cols, t.rows);
     const offData = window.api.onTerminalData?.((d) => t.write(d));
     t.onData((d) => window.api.terminalWrite?.(d));
     const onResize = () => fit.fit();

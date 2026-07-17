@@ -11,7 +11,11 @@
         "build:renderer": "vite build",
         "build:main": "tsc -p tsconfig.main.json",
         "build": "pnpm build:renderer && pnpm build:main && electron-builder",
-        "preview": "electron ."
+        "preview": "electron .",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "lint": "tsc -p tsconfig.json --noEmit"
     },
     "devDependencies": {
         "@tailwindcss/vite": "catalog:",
@@ -25,7 +29,8 @@
         "tailwindcss": "catalog:",
         "typescript": "catalog:",
         "vite": "catalog:",
-        "wait-on": "^8.0.0"
+        "wait-on": "^8.0.0",
+        "vitest": "^2.1.0"
     },
     "dependencies": {
         "@androdex/server": "workspace:*",

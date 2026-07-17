@@ -1,5 +1,5 @@
-import { app, BrowserWindow } from "electron";
-import { spawn, type ChildProcess } from "node:child_process";
+import { app, BrowserWindow, dialog } from "electron";
+import { spawn, type ChildProcess, execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { registerHandlers } from "../ipc/index.js";
@@ -12,6 +12,18 @@ const PORT = 4096;
 const HOST = "127.0.0.1";
 
 let childProcess: ChildProcess | null = null;
+
+// Locate the opencode binary on the user's PATH. In a packaged app the
+// process PATH is stripped down, so we shell out to `which`/`where` which
+// read the real system PATH. Returns null if not installed.
+function findOpencode(): string | null {
+  const cmd = process.platform === "win32" ? "where opencode" : "which opencode";
+  try {
+    return execSync(cmd, { encoding: "utf8" }).split(/\r?\n/)[0].trim() || null;
+  } catch {
+    return null;
+  }
+}
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -50,8 +62,23 @@ async function waitForHealth(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
-  childProcess = spawn("opencode", ["serve", "--port", String(PORT)], {
+  const opencodePath = findOpencode();
+  if (!opencodePath) {
+    await dialog.showErrorBox(
+      "OpenCode not found",
+      "Androdex needs the 'opencode' CLI to run.\n\nInstall it with:\n  npm install -g opencode-ai\nor:\n  curl -fsSL https://opencode.ai/install | bash\n\nthen restart Androdex.",
+    );
+    app.quit();
+    return;
+  }
+
+  childProcess = spawn(opencodePath, ["serve", "--port", String(PORT)], {
     stdio: "ignore",
+    env: process.env,
+  });
+
+  childProcess.on("error", (err) => {
+    console.error("Failed to spawn OpenCode server:", err);
   });
 
   try {
@@ -59,6 +86,10 @@ app.whenReady().then(async () => {
   } catch (err) {
     console.error("Failed to start OpenCode server:", err);
     childProcess.kill();
+    await dialog.showErrorBox(
+      "OpenCode failed to start",
+      "The OpenCode server did not become ready in time. Check that the 'opencode' CLI works in your terminal.",
+    );
     app.quit();
     return;
   }

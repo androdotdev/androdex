@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog } from "electron";
 import { spawn, type ChildProcess, execSync } from "node:child_process";
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { registerHandlers } from "../ipc/index.js";
 import { registerPtyHandlers } from "../pty-host/index.js";
@@ -13,13 +14,20 @@ const HOST = "127.0.0.1";
 
 let childProcess: ChildProcess | null = null;
 
-// Locate the opencode binary on the user's PATH. In a packaged app the
-// process PATH is stripped down, so we shell out to `which`/`where` which
-// read the real system PATH. Returns null if not installed.
+// Resolve the opencode binary. Priority:
+//   1. Bundled binary in app resources (extraResources -> resources/opencode/)
+//   2. System PATH (for dev / user-installed opencode)
+// Returns null if not found anywhere.
 function findOpencode(): string | null {
+  // 1. Bundled resource (packaged app)
+  const bundled = path.join(process.resourcesPath, "opencode", process.platform === "win32" ? "opencode.exe" : "opencode");
+  if (fs.existsSync(bundled)) return bundled;
+
+  // 2. System PATH
   const cmd = process.platform === "win32" ? "where opencode" : "which opencode";
   try {
-    return execSync(cmd, { encoding: "utf8" }).split(/\r?\n/)[0].trim() || null;
+    const found = execSync(cmd, { encoding: "utf8" }).split(/\r?\n/)[0].trim();
+    return found || null;
   } catch {
     return null;
   }

@@ -143,4 +143,4 @@ vite.config.ts.timestamp-*
 .vite/
 
 
-.demos
+.demosapps/desktop/resources/opencode/

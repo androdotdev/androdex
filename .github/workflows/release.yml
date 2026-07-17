@@ -17,10 +17,16 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
+            opencode_asset: opencode-linux-x64.tar.gz
+            opencode_bin: opencode
           - os: macos-latest
             platform: mac
+            opencode_asset: opencode-darwin-arm64.zip
+            opencode_bin: opencode
           - os: windows-latest
             platform: win
+            opencode_asset: opencode-windows-x64.zip
+            opencode_bin: opencode.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -59,6 +65,29 @@ jobs:
       - name: Fix node-pty spawn-helper perms (pnpm/macOS #850)
         if: runner.os == 'macOS'
         run: find node_modules/.pnpm -path '*node-pty*/prebuilds/darwin-*' -name spawn-helper -exec chmod +x {} +
+
+      # Bundle the opencode CLI binary into the app (extraResources) so end-users
+      # don't need to install it separately. Download per-OS from the opencode release.
+      - name: Download opencode binary
+        shell: bash
+        run: |
+          mkdir -p apps/desktop/resources/opencode
+          gh release download v1.18.3 \
+            --repo anomalyco/opencode \
+            --pattern "${{ matrix.opencode_asset }}" \
+            --dir /tmp/opencode-dl
+          if [[ "${{ matrix.opencode_asset }}" == *.zip ]]; then
+            unzip -o /tmp/opencode-dl/${{ matrix.opencode_asset }} -d /tmp/opencode-extracted
+          else
+            tar -xzf /tmp/opencode-dl/${{ matrix.opencode_asset }} -C /tmp/opencode-extracted
+          fi
+          # Find the binary (top-level or nested) and copy it
+          BIN=$(find /tmp/opencode-extracted -type f -name "${{ matrix.opencode_bin }}" | head -1)
+          cp "$BIN" "apps/desktop/resources/opencode/${{ matrix.opencode_bin }}"
+          chmod +x "apps/desktop/resources/opencode/${{ matrix.opencode_bin }}"
+          ls -la apps/desktop/resources/opencode/
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build packages + renderer + main
         run: |

@@ -18,6 +18,14 @@ files:
   - node_modules/**
   - package.json
 
+# Bundle the opencode CLI so users don't need to install it separately.
+# The CI workflow downloads the per-OS binary into resources/opencode/.
+extraResources:
+  - from: resources/opencode
+    to: opencode
+    filter:
+      - "**/*"
+
 extraMetadata:
   main: dist/main/index.js
 

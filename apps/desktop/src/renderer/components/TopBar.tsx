@@ -17,10 +17,8 @@ export function TopBar() {
     (async () => {
       try {
         const res = await window.api.listModels();
-        const list = (res as any).data?.data || (res as any).data || [];
-        const names = (Array.isArray(list) ? list : []).map(
-          (m: any) => m.id || m.name || String(m)
-        );
+        const list: ModelInfo[] = res.data || [];
+        const names = list.map((m) => m.id || m.name || String(m));
         setModels(names);
         // Set default model if none selected and we have models
         if (!model && names.length > 0) {

@@ -18,6 +18,19 @@ interface Message {
   status: "streaming" | "done" | "error";
 }
 
+interface ModelInfo {
+  id: string;
+  name?: string;
+  provider?: string;
+  capabilities?: string[];
+}
+
+interface AgentInfo {
+  id: string;
+  name?: string;
+  description?: string;
+}
+
 interface ToolCall {
   id: string;
   tool: string;
@@ -58,8 +71,8 @@ interface Window {
     getConfig(): Promise<ApiResponse<any>>;
     updateConfig(params: any): Promise<ApiResponse<any>>;
     getProviders(): Promise<ApiResponse<any>>;
-    listModels(): Promise<ApiResponse<any>>;
-    listAgents(): Promise<ApiResponse<any>>;
+    listModels(): Promise<ApiResponse<ModelInfo[]>>;
+    listAgents(): Promise<ApiResponse<AgentInfo[]>>;
     listCommands(): Promise<ApiResponse<any>>;
     subscribeToEvents(params?: any): Promise<ApiResponse<any>>;
     terminalSpawn(id: string, cols: number, rows: number): Promise<void>;

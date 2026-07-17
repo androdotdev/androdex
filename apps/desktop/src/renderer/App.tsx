@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
 import { MessageList } from "./components/MessageList";
@@ -15,12 +15,16 @@ export default function App() {
   const model = useUiStore((s) => s.model);
   const agentMode = useUiStore((s) => s.agentMode);
   const [initDone, setInitDone] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+  const initLock = useRef(false);
 
-  // On mount: create a default session so the send button is enabled
+  // On mount: create a default session so the send button is enabled.
+  // useRef lock guards against StrictMode double-fire (React 18/19 dev).
   useEffect(() => {
+    if (initLock.current) return;
+    initLock.current = true;
     (async () => {
       try {
-        // Fetch existing sessions
         const listRes = await window.api.listSessions({ limit: 10 });
         const existing = listRes.data || [];
         if (existing.length > 0) {
@@ -29,7 +33,6 @@ export default function App() {
           setInitDone(true);
           return;
         }
-        // No sessions yet — create one
         const res = await window.api.createSession({
           title: "default",
           agent: agentMode,
@@ -41,7 +44,9 @@ export default function App() {
           setActiveSession(res.data.id);
         }
       } catch (e) {
-        console.error("Failed to init session:", e);
+        const msg = e instanceof Error ? e.message : "Failed to initialize session";
+        console.error("Androdex init error:", e);
+        setInitError(msg);
       } finally {
         setInitDone(true);
       }
@@ -50,8 +55,15 @@ export default function App() {
 
   if (!initDone) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-950 text-slate-400 text-sm">
-        Starting Androdex…
+      <div className="h-screen flex items-center justify-center bg-slate-950 text-sm">
+        {initError ? (
+          <div className="text-center space-y-2">
+            <p className="text-rose-400">Failed to start</p>
+            <p className="text-slate-400 max-w-md">{initError}</p>
+          </div>
+        ) : (
+          <p className="text-slate-400">Starting Androdex…</p>
+        )}
       </div>
     );
   }

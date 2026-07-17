@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSessionStore, useUiStore } from "../lib/store";
 
 export function Sidebar() {
@@ -7,8 +8,10 @@ export function Sidebar() {
   const setSessions = useSessionStore((s) => s.setSessions);
   const model = useUiStore((s) => s.model);
   const agentMode = useUiStore((s) => s.agentMode);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const createNew = async () => {
+    setCreateError(null);
     try {
       const res = await window.api.createSession({
         title: "new thread",
@@ -21,7 +24,10 @@ export function Sidebar() {
         setActiveSession(res.data.id);
       }
     } catch (e) {
-      console.error("Failed to create session:", e);
+      const msg = e instanceof Error ? e.message : "Failed to create session";
+      console.error("Sidebar createSession error:", e);
+      setCreateError(msg);
+      setTimeout(() => setCreateError(null), 4000);
     }
   };
 
@@ -36,6 +42,11 @@ export function Sidebar() {
           + New
         </button>
       </div>
+      {createError && (
+        <div className="px-3 py-2 text-xs text-rose-400 bg-rose-950/30 border-b border-rose-900/30">
+          {createError}
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {sessions.length === 0 && (
           <p className="text-xs text-slate-500 px-2 py-4 text-center">No sessions yet</p>

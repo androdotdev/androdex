@@ -38,12 +38,11 @@ export function registerPtyHandlers(): void {
     return { ok: true };
   });
 
-  // Fire-and-forget on hot path (keystroke / resize) — no promise overhead
-  ipcMain.on("pty:write", (_e, id: string, data: string) => {
+  ipcMain.handle("pty:write", (_e, id: string, data: string) => {
     sessions.get(id)?.write(data);
   });
 
-  ipcMain.on("pty:resize", (_e, id: string, cols: number, rows: number) => {
+  ipcMain.handle("pty:resize", (_e, id: string, cols: number, rows: number) => {
     sessions.get(id)?.resize(cols, rows);
   });
 

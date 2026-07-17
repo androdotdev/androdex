@@ -5,6 +5,7 @@ export function Sidebar() {
   const sessions = useSessionStore((s) => s.sessions);
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const setActiveSession = useSessionStore((s) => s.setActiveSession);
+  const setMessages = useSessionStore((s) => s.setMessages);
   const setSessions = useSessionStore((s) => s.setSessions);
   const model = useUiStore((s) => s.model);
   const agentMode = useUiStore((s) => s.agentMode);
@@ -54,7 +55,7 @@ export function Sidebar() {
         {sessions.map((s) => (
           <button
             key={s.id}
-            onClick={() => setActiveSession(s.id)}
+            onClick={async () => { setActiveSession(s.id); try { const r = await window.api.getSessionMessages(s.id, { limit: 50 }); if (r.data) setMessages(s.id, r.data); } catch {} }}
             className={`w-full text-left px-2 py-2 rounded text-xs truncate ${
               activeSessionId === s.id
                 ? "bg-slate-800 text-cyan-400"

@@ -12,6 +12,7 @@ export default function App() {
   const toggleTerminal = useUiStore((s) => s.toggleTerminal);
   const setSessions = useSessionStore((s) => s.setSessions);
   const setActiveSession = useSessionStore((s) => s.setActiveSession);
+  const setMessages = useSessionStore((s) => s.setMessages);
   const model = useUiStore((s) => s.model);
   const agentMode = useUiStore((s) => s.agentMode);
   const [initDone, setInitDone] = useState(false);
@@ -30,6 +31,10 @@ export default function App() {
         if (existing.length > 0) {
           setSessions(existing);
           setActiveSession(existing[0].id);
+          try {
+            const msgsRes = await window.api.getSessionMessages(existing[0].id, { limit: 50 });
+            if (msgsRes.data) setMessages(existing[0].id, msgsRes.data);
+          } catch {}
           setInitDone(true);
           return;
         }

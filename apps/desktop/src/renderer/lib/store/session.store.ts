@@ -8,6 +8,7 @@ export interface SessionSlice {
     setSessions: (sessions: Session[]) => void;
     setActiveSession: (id: string | null) => void;
     setMessages: (sessionId: string, messages: Message[]) => void;
+    appendMessage: (sessionId: string, message: Message) => void;
 }
 
 export const createSessionSlice: StateCreator<SessionSlice> = (set) => ({
@@ -19,4 +20,11 @@ export const createSessionSlice: StateCreator<SessionSlice> = (set) => ({
     setActiveSession: (id) => set({ activeSessionId: id }),
     setMessages: (id, msgs) =>
         set((s) => ({ messages: { ...s.messages, [id]: msgs } })),
+    appendMessage: (id, msg) =>
+        set((s) => ({
+            messages: {
+                ...s.messages,
+                [id]: [...(s.messages[id] || []), msg],
+            },
+        })),
 });

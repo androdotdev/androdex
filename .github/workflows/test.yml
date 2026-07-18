@@ -1,0 +1,39 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PNPM_VERSION: "10"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build server
+        run: pnpm exec tsc -p packages/server/tsconfig.json --noEmit
+
+      - name: Build desktop main
+        run: pnpm exec tsc -p apps/desktop/tsconfig.main.json --noEmit
+
+      - name: Run tests
+        working-directory: tests
+        run: pnpm exec vitest run --reporter=verbose

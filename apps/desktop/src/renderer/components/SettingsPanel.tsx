@@ -57,11 +57,13 @@ export function SettingsPanel() {
     setError(null);
     try {
       await window.api.updateConfig({
-        providers: {
-          [providerId]: { apiKey: raw },
+        provider: {
+          [providerId]: { options: { apiKey: apiKeys[providerId] } },
         },
       });
       setSaved(true);
+      // Update the display to show the mask now that it's saved
+      setApiKeys((k) => ({ ...k, [providerId]: "••••••••" }));
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
       setError(

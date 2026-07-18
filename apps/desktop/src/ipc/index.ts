@@ -38,6 +38,13 @@ const handlers: Record<
     "opencode:listAgents": () => client.models.agents(),
     "opencode:listCommands": () => client.commands.list(),
     "opencode:subscribeToEvents": (_, p) => client.events.subscribe(p),
+
+    // Terminal (stub — full PTY integration requires node-pty + session tracking)
+    "opencode:terminalWrite": async (_, data) => {
+        console.warn("terminalWrite called but terminal not connected:", data);
+    },
+    "opencode:terminalResize": async () => {},
+    "opencode:terminalDestroy": async () => {},
 };
 
 export function registerHandlers(): void {

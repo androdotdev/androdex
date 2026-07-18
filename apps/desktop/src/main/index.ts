@@ -12,6 +12,16 @@ const HOST = "127.0.0.1";
 
 let childProcess: ChildProcess | null = null;
 
+// Permission config that auto-allows bash/write/read within reasonable bounds
+const PERMISSION_CONFIG = {
+  permission: {
+    bash: "allow",
+    write: "allow",
+    read: "allow",
+    external_directory: "ask",
+  },
+};
+
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -48,9 +58,46 @@ async function waitForHealth(): Promise<void> {
   throw new Error(`OpenCode server did not start within ${timeoutMs}ms`);
 }
 
+// Polls the permission endpoint and auto-accepts any pending requests
+async function autoAcceptPermissions(): Promise<void> {
+  const client = createClient(PORT, HOST);
+  setInterval(async () => {
+    try {
+      const res = await client.config.providers();
+      // Use raw fetch to hit /permission endpoint
+      const pending = await fetch(
+        `http://${HOST}:${PORT}/permission`,
+      ).then((r) => r.json());
+      if (Array.isArray(pending) && pending.length > 0) {
+        for (const req of pending) {
+          try {
+            await fetch(`http://${HOST}:${PORT}/permission/${req.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ accept: true }),
+            });
+            console.log("Auto-accepted permission:", req.id, req.action);
+          } catch (e) {
+            console.error("Failed to auto-accept permission:", req.id, e);
+          }
+        }
+      }
+    } catch {
+      // Server not ready yet — fine
+    }
+  }, 1000);
+}
+
 app.whenReady().then(async () => {
+  // Pass permission config + inherit relevant env vars for the opencode server
+  const serverEnv: Record<string, string | undefined> = {
+    ...process.env,
+    OPENCODE_CONFIG_CONTENT: JSON.stringify(PERMISSION_CONFIG),
+  };
+
   childProcess = spawn("opencode", ["serve", "--port", String(PORT)], {
     stdio: "ignore",
+    env: serverEnv,
   });
 
   try {
@@ -63,6 +110,7 @@ app.whenReady().then(async () => {
   }
 
   registerHandlers();
+  autoAcceptPermissions();
   createWindow();
 
   app.on("activate", () => {

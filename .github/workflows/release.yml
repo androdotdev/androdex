@@ -1,0 +1,118 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            opencode_asset: opencode-linux-x64.tar.gz
+            opencode_bin: opencode
+          - os: macos-latest
+            platform: mac
+            opencode_asset: opencode-darwin-arm64.zip
+            opencode_bin: opencode
+          - os: windows-latest
+            platform: win
+            opencode_asset: opencode-windows-x64.zip
+            opencode_bin: opencode.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Cache Electron + electron-builder downloaded binaries (avoid 113MB re-download)
+      - name: Cache Electron binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: ${{ runner.os }}-electron-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Cache electron-builder
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-builder
+
+      # node-pty 1.1.0 ships prebuilds (real TTY binaries) — use them, don't compile.
+      # build_from_source=false keeps the prebuild path (no MSVC / no Python needed).
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+        env:
+          npm_config_build_from_source: "false"
+
+      # pnpm copies node-pty prebuilds with 644 perms on macOS (node-pty issue #850,
+      # unfixed in 1.1.0). chmod the spawn-helper so it's executable at runtime.
+      - name: Fix node-pty spawn-helper perms (pnpm/macOS #850)
+        if: runner.os == 'macOS'
+        run: find node_modules/.pnpm -path '*node-pty*/prebuilds/darwin-*' -name spawn-helper -exec chmod +x {} +
+
+      # Bundle the opencode CLI binary into the app (extraResources) so end-users
+      # don't need to install it separately. Download per-OS from the opencode release.
+      - name: Download opencode binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p apps/desktop/resources/opencode
+          mkdir -p /tmp/opencode-dl /tmp/opencode-extracted
+          gh release download v1.18.3 \
+            --repo anomalyco/opencode \
+            --pattern "${{ matrix.opencode_asset }}" \
+            --dir /tmp/opencode-dl
+          echo "Downloaded: $(ls -la /tmp/opencode-dl)"
+          if [[ "${{ matrix.opencode_asset }}" == *.zip ]]; then
+            unzip -o "/tmp/opencode-dl/${{ matrix.opencode_asset }}" -d /tmp/opencode-extracted
+          else
+            tar -xzf "/tmp/opencode-dl/${{ matrix.opencode_asset }}" -C /tmp/opencode-extracted
+          fi
+          # Find the binary (top-level or nested) and copy it
+          BIN=$(find /tmp/opencode-extracted -type f -name "${{ matrix.opencode_bin }}" | head -1)
+          echo "Found binary: $BIN"
+          cp "$BIN" "apps/desktop/resources/opencode/${{ matrix.opencode_bin }}"
+          chmod +x "apps/desktop/resources/opencode/${{ matrix.opencode_bin }}"
+          ls -la apps/desktop/resources/opencode/
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build packages + renderer + main
+        run: |
+          pnpm --filter @androdex/server build
+          pnpm --filter @androdex/desktop build:renderer
+          pnpm --filter @androdex/desktop build:main
+
+      # Step 1: package only (no publish) — fails fast on config/build errors
+      - name: Package (electron-builder)
+        run: pnpm --filter @androdex/desktop exec electron-builder --${{ matrix.platform }} --publish never
+
+      # Step 2: publish separately, only on tag pushes
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: pnpm --filter @androdex/desktop exec electron-builder --${{ matrix.platform }} --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-binaries
+          path: apps/desktop/release/*.*
+          if-no-files-found: ignore

@@ -22,3 +22,4 @@ allowBuilds:
   electron-winstaller: false
   esbuild: false
   node-pty: true
+

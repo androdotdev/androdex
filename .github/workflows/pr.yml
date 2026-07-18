@@ -1,0 +1,46 @@
+name: pr-check
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]   # also gate direct pushes to main
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      # Build renderer (vite) + main process (tsc -> dist/main)
+      - name: Build renderer
+        run: pnpm --filter @androdex/desktop build:renderer
+
+      - name: Build main process
+        run: pnpm --filter @androdex/desktop build:main
+
+      # Type-check both projects (catches drift / unused / implicit any)
+      - name: Typecheck (renderer)
+        run: pnpm --filter @androdex/desktop exec tsc -p tsconfig.json --noEmit
+
+      - name: Typecheck (main)
+        run: pnpm --filter @androdex/desktop exec tsc -p tsconfig.main.json --noEmit
+
+      # Unit tests (vitest): store slices, pty-host, preload bridge
+      - name: Test
+        run: pnpm --filter @androdex/desktop test
